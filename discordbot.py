@@ -24,6 +24,8 @@ bot = commands.Bot(
     allowed_mentions=discord.AllowedMentions.none()
 )
 
+cog_loaded = False
+
 class CustomCheckFailure(commands.CheckFailure):
     pass
 
@@ -31,11 +33,14 @@ class CustomCheckFailure(commands.CheckFailure):
 
 @bot.event
 async def on_ready():
-    user_cog = UserCog()
-    bot.help_command.cog = user_cog
-    await bot.add_cog(user_cog)
-    await bot.add_cog(AdminCog())
-    await bot.add_cog(OwnerCog())
+    global cog_loaded
+    if not cog_loaded:
+        user_cog = UserCog()
+        bot.help_command.cog = user_cog
+        await bot.add_cog(user_cog)
+        await bot.add_cog(AdminCog())
+        await bot.add_cog(OwnerCog())
+        cog_loaded = True
 
     print(f"Logged on as {bot.user}!")
         
@@ -253,36 +258,6 @@ class UserCog(commands.Cog, name="User"):
         
         # Silence ping
         await ctx.reply(reply)
-        
-    @status.command(name='reg')
-    @is_privileged()
-    async def status_registration(self, ctx):
-        """Shows if registration is open and a list of registered users
-        
-        Usage: status registration
-        """
-    
-        reply = f"User registration is {'open' if REG.is_open else 'closed'}.\n"
-
-        registered = LOGSEC.registered
-        if registered:
-            registered = [list(row.values()) for row in registered]
-            for i, row in enumerate(registered):
-                discord_id = row[0]
-                user = await get_user(discord_id)
-                    
-                if user:
-                    name = user.name
-                    disc = user.discriminator
-                    registered[i][0] = f"@{name}#{disc}"
-                else:
-                    registered[i][0] = f"Error: <@{discord_id}>"
-                    
-            reply += f"```{tabulate(registered, headers=['Discord User', 'Minecraft Name', 'Date Registered'])}```\n"
-        else:
-            reply += "No registrations in database.\n"
-            
-        await ctx.reply(reply)
             
 class AdminCog(commands.Cog, name="Administrative"):
     """Commands expected to be used by administrators.
@@ -380,6 +355,36 @@ class AdminCog(commands.Cog, name="Administrative"):
         else:
             banned = [f"{i}. <@{b}>" for i, b in enumerate(banned, 1)]
             await ctx.reply(f"Banned users:\n" + '\n'.join(banned))
+            
+    @commands.hybrid_command(name='registered')
+    @is_privileged()
+    async def registered(self, ctx):
+        """Shows if registration is open and a list of registered users
+        
+        Usage: status registration
+        """
+    
+        reply = f"User registration is {'open' if REG.is_open else 'closed'}.\n"
+
+        registered = LOGSEC.registered
+        if registered:
+            registered = [list(row.values()) for row in registered]
+            for i, row in enumerate(registered):
+                discord_id = row[0]
+                user = await get_user(discord_id)
+                    
+                if user:
+                    name = user.name
+                    disc = user.discriminator
+                    registered[i][0] = f"@{name}#{disc}"
+                else:
+                    registered[i][0] = f"Error: <@{discord_id}>"
+                    
+            reply += f"```{tabulate(registered, headers=['Discord User', 'Minecraft Name', 'Date Registered'])}```\n"
+        else:
+            reply += "No registrations in database.\n"
+            
+        await ctx.reply(reply)
             
 class OwnerCog(commands.Cog, name="Owner"):
     """Commands expected to be used by the owner of the bot.

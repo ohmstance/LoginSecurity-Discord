@@ -63,7 +63,7 @@ class LogSec:
         Raises DuplicateError if either Discord ID or Minecraft username exist in database.
         """
         
-        logging.debug(f"(register) discord id, mc_username, and password: {discord_id} {mc_username} {password}")
+        logging.debug(f"(register) discord id, mc_username: {discord_id} {mc_username}")
         
         # Validate Minecraft username and password.
         if not (3 <= len(mc_username) <= 16) and ' ' not in mc_username:
