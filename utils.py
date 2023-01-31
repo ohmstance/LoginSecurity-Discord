@@ -25,7 +25,6 @@ class ListFile:
 
     def reload(self, filename=None):
         filename = filename or self.filename
-        
         if os.path.isfile(filename):
             with open(filename, "r") as f:
                 banstr = f.read().strip()
@@ -34,7 +33,7 @@ class ListFile:
                 
     def save(self, filename=None):
         filename = filename or self.filename
-        
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "w") as f:
             for item in list(self.item_set):
                 f.write(item+"\n")
@@ -90,11 +89,12 @@ class RegFile:
     """Simple class used to track if registrations are open or closed.
     """
     
-    def __init__(self):
-        self.filename = "server.closed"
+    def __init__(self, filename="server.closed"):
+        self.filename = filename
         self.is_open = not os.path.isfile(self.filename)
         
     def close(self):
+        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         with open(self.filename, "w") as f:
             pass
         self.is_open = False

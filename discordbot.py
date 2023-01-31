@@ -472,9 +472,9 @@ async def get_user(discord_id):
     return user
     
 if __name__ == "__main__":
-    BANNED = BanFile("banlist.txt")
-    ADMINS = AdminFile("adminlist.txt")
-    REG = RegFile()
+    BANNED = BanFile("./conf/banlist.txt")
+    ADMINS = AdminFile("./conf/adminlist.txt")
+    REG = RegFile("./conf/server.closed")
 
     LOGSEC = LogSec(
         os.getenv('DB_USERNAME'), 
@@ -484,5 +484,5 @@ if __name__ == "__main__":
         os.getenv('DB_NAME')
     )
     
-    handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
+    handler = logging.FileHandler(filename="./conf/discord.log", encoding="utf-8", mode="w")
     bot.run(os.getenv('DISCORD_TOKEN'), log_handler=handler, log_level=logging.INFO)

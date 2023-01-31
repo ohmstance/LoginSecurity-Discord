@@ -1,5 +1,5 @@
 __pycache__/
-adminlist.txt
-banlist.txt
-discord.log
+**/adminlist.txt
+**/banlist.txt
+**/discord.log
 .env
