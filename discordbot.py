@@ -135,12 +135,12 @@ class UserCog(commands.Cog, name="User"):
                 f"You have already registered with username {result[0]['last_name']} on {result[0]['registration_date']}."
             )
             return
-        
+
         result = LOGSEC.lookup_username(username)
         if result:
             await ctx.reply("How original -- the username is already taken. Register a different username.")
             return
-                
+
         name = ctx.message.author.name
         disc = ctx.message.author.discriminator
         thread = await ctx.channel.create_thread(
@@ -150,16 +150,21 @@ class UserCog(commands.Cog, name="User"):
             auto_archive_duration=60,
             invitable=False
         )
-        redirect = await ctx.reply(f"Head on to <#{thread.id}>. Link shows as #deleted-channel to others.")
+        redirect = await ctx.reply(f"Hold on for a moment...")
         try:
             await thread.send(
-                f"<@{discord_id}>\n"
-                "Enter password which will be used to login to Minecraft server. "
-                "Password must be 6 to 32 characters long, and not contain any spaces. "
-                "Private thread will be deleted immediately after response. "
-                "Enter 'c' to cancel registration."
+                f"<@{discord_id}> \n"
+                "Enter password which will be used to login to Minecraft server. \n"
+                "Password must be 6 to 32 characters long, and not contain any spaces. \n"
+                "Private thread will be deleted immediately after response. \n"
+                "Enter 'c' to cancel registration.",
+                allowed_mentions=discord.AllowedMentions.all() #Globally disabled for this bot by default
             )
-            message = await bot.wait_for('message', check=lambda m: m.channel.id == thread.id, timeout=300)
+            await redirect.edit(content=f"Head on to <#{thread.id}>. Link shows as #deleted-channel to others.")
+            message = await bot.wait_for(
+                'message', timeout=300,
+                check=lambda m: m.channel.id == thread.id and m.author.id == int(discord_id) 
+            )
         except asyncio.TimeoutError:
             await ctx.reply("Shucks, timed-out waiting for your response. Cya.")
             return
