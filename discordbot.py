@@ -150,7 +150,7 @@ class UserCog(commands.Cog, name="User"):
             auto_archive_duration=60,
             invitable=False
         )
-        redirect = await ctx.reply(f"Hold on for a moment...")
+        message = await ctx.reply(f"Hold on for a moment...")
         try:
             await thread.send(
                 f"<@{discord_id}> \n"
@@ -160,32 +160,31 @@ class UserCog(commands.Cog, name="User"):
                 "Enter 'c' to cancel registration.",
                 allowed_mentions=discord.AllowedMentions.all() #Globally disabled for this bot by default
             )
-            await redirect.edit(content=f"Head on to <#{thread.id}>. Link shows as #deleted-channel to others.")
-            message = await bot.wait_for(
+            await message.edit(content=f"Head on to <#{thread.id}>. Link shows as #deleted-channel to others.")
+            user_reply = await bot.wait_for(
                 'message', timeout=300,
                 check=lambda m: m.channel.id == thread.id and m.author.id == int(discord_id) 
             )
         except asyncio.TimeoutError:
-            await ctx.reply("Shucks, timed-out waiting for your response. Cya.")
+            await message.edit(content="Shucks, timed-out waiting for your response. Cya.")
             return
         finally:
-            await redirect.delete()
             await thread.delete()
             
-        if message.content == 'c':
-            await ctx.reply("Changed your mind, huh? Alright.")
+        if user_reply.content == 'c':
+            await message.edit(content="Changed your mind, huh? Alright.")
             return
             
-        if not (6 <= len(message.content) <= 32) or ' ' in message.content:
-            await ctx.reply(
-                "Password must be 6 to 32 characters long, and not contain any spaces. "
-                "I already told you that."
+        if not (6 <= len(user_reply.content) <= 32) or ' ' in user_reply.content:
+            await message.edit(
+                content=("Password must be 6 to 32 characters long, and not contain any spaces." 
+                "I already told you that.")
             )
             return
             
-        LOGSEC.register(discord_id, username, message.content)
+        LOGSEC.register(discord_id, username, user_reply.content)
         
-        await ctx.reply(f"Your username, {username}, has been registered.")
+        await message.edit(content=f"Your username, {username}, has been registered.")
 
     @commands.hybrid_group(fallback='self', name='unregister', invoke_without_command=True)
     async def unregister(self, ctx):
@@ -490,4 +489,10 @@ if __name__ == "__main__":
     )
     
     handler = logging.FileHandler(filename="./conf/discord.log", encoding="utf-8", mode="w")
-    bot.run(os.getenv('DISCORD_TOKEN'), log_handler=handler, log_level=logging.INFO)
+    
+    # Bot does not stop with default SIGTERM handling for some reason.
+    # Docker will wait until timeout until sending SIGINT -- how about we do it immediately.
+    import signal
+    signal.signal(signal.SIGTERM, lambda x, y: signal.raise_signal(signal.SIGINT))
+
+    bot.run(os.getenv('DISCORD_TOKEN'), log_handler=handler, log_level=logging.DEBUG)
