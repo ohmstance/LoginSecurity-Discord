@@ -181,7 +181,15 @@ class UserCog(commands.Cog, name="User"):
                 "I already told you that.")
             )
             return
-            
+
+        # Mitigate race condition
+        if LOGSEC.lookup_discord(discord_id) or LOGSEC.lookup_username(username):
+            await message.edit(content=(
+                f"Too slow! Someone has snapped up your username, {username}, during registration. "
+                "Or, you are trying to mess with me. Either way, use a different username."
+                ))
+            return
+
         LOGSEC.register(discord_id, username, user_reply.content)
         
         await message.edit(content=f"Your username, {username}, has been registered.")
@@ -250,7 +258,7 @@ class UserCog(commands.Cog, name="User"):
         
         reply += f"User: <@{discord_id}>\n"
         
-        result = LOGSEC.lookup_discord(ctx.message.author.id)
+        result = LOGSEC.lookup_discord(discord_id)
         status = 'Banned' if discord_id in BANNED else 'Registered' if result else 'Unregistered'    
         reply += f"Status: {status}\n" 
         
@@ -260,7 +268,6 @@ class UserCog(commands.Cog, name="User"):
                 f"Date registered: {result[0]['registration_date']}"
             )
         
-        # Silence ping
         await ctx.reply(reply)
             
 class AdminCog(commands.Cog, name="Administrative"):
@@ -367,7 +374,9 @@ class AdminCog(commands.Cog, name="Administrative"):
         
         Usage: status registration
         """
-    
+
+        message = await ctx.reply("Hold on for a moment...")
+        
         reply = f"User registration is {'open' if REG.is_open else 'closed'}.\n"
 
         registered = LOGSEC.registered
@@ -388,7 +397,7 @@ class AdminCog(commands.Cog, name="Administrative"):
         else:
             reply += "No registrations in database.\n"
             
-        await ctx.reply(reply)
+        await message.edit(content=reply)
             
 class OwnerCog(commands.Cog, name="Owner"):
     """Commands expected to be used by the owner of the bot.
